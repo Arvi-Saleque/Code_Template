@@ -1,1 +1,13 @@
-
+ll bigMod(ll a,ll b,ll M)
+{
+	if(b == 0) return 1;
+	if(!(b&1))
+	{
+		ll val = bigMod(a,b/2,M)%M;
+		return (val*val)%M;
+	}
+	else 
+	{
+		return (a * bigMod(a,b-1,M)%M)%M;
+	}
+}
