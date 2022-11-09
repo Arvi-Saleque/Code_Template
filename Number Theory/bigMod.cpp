@@ -3,7 +3,11 @@ using namespace std;
 typedef long long int ll;
 const int MAX = 200000;
 const int mod = 1000000007;
-ll bigMod(ll a,ll b,ll MOD)
+
+/*The function return a^b % M
+NOTE: Don't Forget To mod the final ans*/ 
+
+ll bigMod(ll a,ll b,ll MOD) 
 {
 	ll res = 1;
     bool flag = a >= MOD;
@@ -30,14 +34,8 @@ ll bigMod(ll a,ll b,ll MOD)
 }
  
 int main() {
-    int t;
-    scanf("%d",&t);
-    while(t--)
-    {
-        int a,b,c;
-        scanf("%d %d %d",&a,&b,&c);
-        ll val = bigMod(b,c,mod-1);
-        printf("%d\n",bigMod(a,val,mod)%mod);
-    }
+    ll a,b,MOD;
+    cin >> a >> b >> MOD;
+    cout << bigMod(a,b,MOD)%MOD << endl; //*** Be carefull with (%MOD) 
     return 0;
 }
