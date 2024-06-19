@@ -19,6 +19,9 @@ such that x^3 <= N and N = x * y
 now x contain all prime factor 
 less than N^(1/3) 
 and y is prime or y = p1 or y = p1 * p2 
+> if m and n relatively prime then largest 
+number than cant be expressed using n, m is
+nm - n - m
 > #pragma GCC optimize("Ofast,unroll-loops")
 #pragma GCC target("avx2,popcnt,
 lzcnt,abm,bmi,bmi2,fma,tune=native")
