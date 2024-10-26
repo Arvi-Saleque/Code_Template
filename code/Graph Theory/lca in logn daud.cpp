@@ -1,41 +1,39 @@
-int n, l;
-vector<vector<int>> adj;
-int timer;
-vector<int> tin, tout;
-vector<vector<int>> up;
-void dfs(int v, int p)
-{
-    tin[v] = ++timer;
-    up[v][0] = p;
-    for (int i = 1; i <= l; ++i)
-        up[v][i] = up[up[v][i-1]][i-1];
-    for (int u : adj[v]) {
-        if (u != p)
-            dfs(u, v);
-    }
-    tout[v] = ++timer;
+const int N = 3e5 + 9, LG = 18;
+
+vector<int> g[N];
+int par[N][LG + 1], dep[N], sz[N];
+void dfs(int u, int p = 0) {
+  par[u][0] = p;
+  dep[u] = dep[p] + 1;
+  sz[u] = 1;
+  for (int i = 1; i <= LG; i++) par[u][i] = par[par[u][i - 1]][i - 1];
+  for (auto v: g[u]) if (v != p) {
+    dfs(v, u);
+    sz[u] += sz[v];
+  }
 }
-bool is_ancestor(int u, int v)
-{
-    return tin[u] <= tin[v] && tout[u] >= tout[v];
+int lca(int u, int v) {
+  if (dep[u] < dep[v]) swap(u, v);
+  for (int k = LG; k >= 0; k--) if (dep[par[u][k]] >= dep[v]) u = par[u][k];
+  if (u == v) return u;
+  for (int k = LG; k >= 0; k--) if (par[u][k] != par[v][k]) u = par[u][k], v = par[v][k];
+  return par[u][0];
 }
-int lca(int u, int v)
-{
-    if (is_ancestor(u, v))
-        return u;
-    if (is_ancestor(v, u))
-        return v;
-    for (int i = l; i >= 0; --i) {
-        if (!is_ancestor(up[u][i], v))
-            u = up[u][i];
-    }
-    return up[u][0];
+int kth(int u, int k) {
+  assert(k >= 0);
+  for (int i = 0; i <= LG; i++) if (k & (1 << i)) u = par[u][i];
+  return u;
 }
-void preprocess(int root) {
-    tin.resize(n);
-    tout.resize(n);
-    timer = 0;
-    l = ceil(log2(n));
-    up.assign(n, vector<int>(l + 1));
-    dfs(root, root);
+int dist(int u, int v) {
+  int l = lca(u, v);
+  return dep[u] + dep[v] - (dep[l] << 1);
+}
+//kth node from u to v, 0th node is u
+int go(int u, int v, int k) {
+  int l = lca(u, v);
+  int d = dep[u] + dep[v] - (dep[l] << 1);
+  assert(k <= d);
+  if (dep[l] + k <= dep[u]) return kth(u, k);
+  k -= dep[u] - dep[l];
+  return kth(v, dep[v] - dep[l] - k);
 }
