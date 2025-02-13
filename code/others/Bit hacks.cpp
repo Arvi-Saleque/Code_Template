@@ -1,4 +1,6 @@
 # x & -x is the least bit in x.
+# for any two value a and b 
+a + b = (a ^ b) + 2(a & b)
 # iterate over all the subsets of the mask
 for (int s=m; ; s=(s-1)&m) {
  ... you can use s ...
