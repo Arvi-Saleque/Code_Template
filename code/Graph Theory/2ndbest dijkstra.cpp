@@ -1,8 +1,3 @@
-#include <bits/stdc++.h>
-using namespace std; 
-typedef long long int ll;
-const int N = 5e3 + 9;
-vector<vector<pair<int, int>>>  adj;
 pair<ll, ll> dis[N + 2];
 void bfs() {
     queue<pair<int, int>> Q;
@@ -27,30 +22,4 @@ void bfs() {
             }
         }
     }
-}
-void solve() {  
-    int n, m;
-    cin >> n >> m;
-    for(int i = 1; i <= n + 1; i++) {
-        dis[i].first = dis[i].second = 1e15; 
-    }
-    adj.assign(n + 1, {});
-    for(int i = 1; i <= m; i++) {
-        int u, v, w;
-        cin >> u >> v >> w;
-        adj[u].push_back({w, v});
-        adj[v].push_back({w, u});
-    }
-    bfs();
-    cout << dis[n].second << "\n";
-}   
-int main() {
-    ios_base::sync_with_stdio(0); cin.tie(0);
-    int t = 1, cs = 1;
-    cin >> t; 
-    while(t--) {
-        cout << "Case " << cs++ << ": ";
-        solve();
-    }
-    return 0;
 }
