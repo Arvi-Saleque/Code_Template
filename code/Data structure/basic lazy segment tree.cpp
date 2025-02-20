@@ -145,21 +145,32 @@ public:
 };
 // arithmatic progression
 
-if(type == 1) {
-    int l, r, a, d;
-    cin >> l >> r >> a >> d;
-    // For each index i in [l, r], we want to add: (a - d*l) + d*i.
-    // So update seg1 (constant part) and seg2 (coefficient part).
-    ll addConst = a - (ll)d * l;
-    seg1.upd(1, 1, n, l, r, addConst);
-    seg2.upd(1, 1, n, l, r, d);
-} else {
-    int k;
-    cin >> k;
-    // Query both segment trees at position k.
-    ll res1 = seg1.query(1, 1, n, k, k).val;
-    ll res2 = seg2.query(1, 1, n, k, k).val;
-    ll ans = res1 + (ll)k * res2;
-    cout << ans << "\n";
+ll sumIndices(ll L, ll R) {
+    return (L + R) * (R - L + 1) / 2;
 }
+
+void push(ll nd, ll b, ll e) {
+    if(lazyA[nd] == 0 && lazyB[nd] == 0) return;
+    ll mid = (b + e) / 2;
+    t[lc].val += lazyA[nd] * (mid - b + 1) + lazyB[nd] * sumIndices(b, mid);
+    t[rc].val += lazyA[nd] * (e - mid) + lazyB[nd] * sumIndices(mid + 1, e);
+    lazyA[lc] += lazyA[nd];
+    lazyB[lc] += lazyB[nd];
+    lazyA[rc] += lazyA[nd];
+    lazyB[rc] += lazyB[nd];
+
+    lazyA[nd] = 0;
+    lazyB[nd] = 0;
+}
+void upd(ll nd, ll b, ll e, ll i, ll j, ll A, ll B) { // ll A = a - b * l;
+        if(j < b || e < i) return;
+        if(i <= b && e <= j) {
+            t[nd].val += A * (e - b + 1) + B * sumIndices(b, e);
+            lazyA[nd] += A;
+            lazyB[nd] += B;
+            return;
+        }
+        push(nd, b, e);
+    }
+// ** MUST PUSH after all return in upd and query otherwise get WA 
 
