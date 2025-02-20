@@ -70,7 +70,8 @@ public:
     }
     void push(int nd, int b, int e) {
         if(lazy[nd] == 0) return;
-        // addition and min/max
+        // addition and min/max 
+        // also used for arithmatic progression
         t[nd] += lazy[nd];
         lazy[l] += lazy[nd];
         // multiplication and sum
@@ -141,72 +142,24 @@ public:
         return query(lc, b, mid, i, j, k) + 
         query(rc, mid+1, e, i, j, k);
     }
-    // itterative
-    void build() {
-      for(int i = 0; i < n; i++) t[i + n] = a[i + 1];
-      for(int i = n - 1; i > 0; --i) t[i] = combine(t[i << 1], t[i << 1 | 1]);
-    }
-    void upd(int p, int v) {
-      p--;
-      for (t[p += n] = v; p >>= 1; ) t[p] = combine(t[p << 1], t[p << 1 | 1]);
-    }
-    int query(int l, int r) {
-      int resl = 0, resr = 0;
-      --l;
-      for(l += n, r += n; l < r; l >>= 1, r >>= 1) {
-        if(l & 1) resl = combine(resl, t[l++]);
-        if(r & 1) resr = combine(t[--r], resr);
-      }
-      return combine(resl, resr);
-    }
 };
-///////////////Arithmeticprogression
- struct
- {
- llhasLazy;
- llcur_a;
- llcur_d;
- llsum;
- }seg[800005];
- voidpropagate(llnode,lll,llr){
- lllnode=node*2;
- llrnode=node*2+1;
- llmid=(l+r)/2;
+// arithmatic progression
 
- lltotal_l=mid-l+1;
- lltotal_r=r-mid;
- lltemp_a_l=seg[node].cur_a+(l-l)*
- seg[node].cur_d;
- lltemp_a_r=seg[node].cur_a+(mid+1-l)*
- seg[node].cur_d;
- seg[lnode].cur_a+=temp_a_l;
- seg[lnode].cur_d+=seg[node].cur_d;
- seg[rnode].cur_a+=temp_a_r;
- seg[rnode].cur_d+=seg[node].cur_d;
- seg[lnode].sum+=progSum(temp_a_l,total_l,
- seg[node].cur_d);
- seg[rnode].sum+=progSum(temp_a_r,total_r,
- seg[node].cur_d);
- seg[node].cur_a=seg[node].cur_d=0;
- }
- 
- voidupdate(llnode,lll,llr ,llL,llR,lla
- ,lld){
- if(R<l||r<L)return;
- if(L<=l&&r<=R){
- lltemp_a=a+(l-L)*d;
- seg[node].cur_a+=temp_a;
- seg[node].cur_d+=d;
- lln=r-l+1;
- seg[node].sum+=progSum(temp_a,n,d);
- return;
- }
- propagate(node,l,r);
- llmid=(l+r)/2;
- lllnode=node*2;
- llrnode=node*2+1;
- update(lnode,l,mid,L,R ,a,d);
- update(rnode,mid+1,r,L ,R,a,d);
- seg[node].sum=seg[lnode].sum +seg[rnode].sum;
- //cout<<l<<""<<r<<""<<seg[node].sum<<endl;
- }
+if(type == 1) {
+    int l, r, a, d;
+    cin >> l >> r >> a >> d;
+    // For each index i in [l, r], we want to add: (a - d*l) + d*i.
+    // So update seg1 (constant part) and seg2 (coefficient part).
+    ll addConst = a - (ll)d * l;
+    seg1.upd(1, 1, n, l, r, addConst);
+    seg2.upd(1, 1, n, l, r, d);
+} else {
+    int k;
+    cin >> k;
+    // Query both segment trees at position k.
+    ll res1 = seg1.query(1, 1, n, k, k).val;
+    ll res2 = seg2.query(1, 1, n, k, k).val;
+    ll ans = res1 + (ll)k * res2;
+    cout << ans << "\n";
+}
+
