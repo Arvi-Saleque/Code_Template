@@ -30,3 +30,17 @@ int highest_set_bit(long long x) return 63 - __builtin_clzll(x);
 int lowest_set_bit(long long x) return __builtin_ctzll(x);
 // Get the number of bits required to represent x
 int bit_length(long long x) return 64 - __builtin_clzll(x);
+
+Some properties of bitwise operations:
+a|b = a⊕b + a&b
+a⊕(a&b) = (a|b)⊕b
+b⊕(a&b) = (a|b)⊕a
+(a&b)⊕(a|b) = a⊕b
+Addition:
+a+b = a|b + a&b
+a+b = a⊕b + 2(a&b)
+Subtraction:
+a-b = (a⊕(a&b))-((a|b)⊕a)
+a-b = ((a|b)⊕b)-((a|b)⊕a)
+a-b = (a⊕(a&b))-(b⊕(a&b))
+a-b = ((a|b)⊕b)-(b⊕(a&b))
