@@ -11,7 +11,8 @@ void pre() {
     }
 }
 int nCr(int n, int r) {
-    if (n < r or n < 0) return 0;
+    if(r < 0 || r > n) return 0;
+    if(n == 0 && r == 0) return 1;
     return 1LL * f[n] * invf[r] % mod * invf[n - r] % mod;
 }
 // ll Catalan_Number = (nCr(2*n, n) % mod - nCr(2*n, n+1) % mod + mod) % mod;
