@@ -18,7 +18,6 @@ public:
         for(int i = 1; i < n; i++) {
             int u, v;
             cin >> u >> v;
-            u++, v++;
             g[u].push_back(v);
             g[v].push_back(u);
         }
