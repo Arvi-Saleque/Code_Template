@@ -100,6 +100,7 @@ public:
     }
     void insert(string s) {
         node *cur = root;
+        cur->sz++;
         for(auto x : s) {
             int id = x - 'a';
             if(cur->child[id] == nullptr) {
@@ -140,6 +141,15 @@ public:
             cur = cur->child[id];
         }
         return cnt;
+    }
+    int howmanyprifixass(string s) {
+        node *cur = root;
+        for(auto x : s) {
+            int id = x - 'a';
+            if(cur->child[id] == nullptr) return 0;
+            cur = cur->child[id];
+        }
+        return cur->sz;
     }
 };
 void solve() {
