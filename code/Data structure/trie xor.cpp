@@ -1,86 +1,128 @@
+// https://codeforces.com/contest/706/problem/D
+
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int N = 1e7 + 9, mod = 998244353; 
+ 
 struct Trie {
-  static const int B = 31;
-  struct node {
-    node* nxt[2];
-    int sz;
-    node() {
-      nxt[0] = nxt[1] = NULL;
-      sz = 0;
+    const int B = 30;
+    struct node { // 1 based
+        node *child[2];
+        int leaf;
+        node() {
+            child[0] = child[1] = 0;
+            leaf = 0;
+        }
+    } *root;
+    
+    Trie () {
+        root = new node();
     }
-  }*root;
-  Trie() {
-    root = new node();
-  }
-  void insert(int val) {
-    node* cur = root;
-    cur -> sz++;
-    for (int i = B - 1; i >= 0; i--) {
-      int b = val >> i & 1;
-      if (cur -> nxt[b] == NULL) 
-        cur -> nxt[b] = new node();
-      cur = cur -> nxt[b];
-      cur -> sz++;
+
+    void insert(int x) {
+        auto cur = root;
+        for(int i = B - 1; i >= 0; i--) {
+            int id = (x >> i) & 1;
+            if(!cur->child[id]) cur->child[id] = new node();
+            cur = cur->child[id];
+        }
+        cur->leaf++;
     }
-  }
-  // number of values s.t. val ^ x < k
-  int query(int x, int k) { 
-    node* cur = root;
-    int ans = 0;
-    for (int i = B - 1; i >= 0; i--) {
-      if (cur == NULL) break;
-      int b1 = x >> i & 1, b2 = k >> i & 1;
-      if (b2 == 1) {
-        if (cur -> nxt[b1]) 
-          ans += cur -> nxt[b1] -> sz;
-        cur = cur -> nxt[!b1];
-      } else cur = cur -> nxt[b1];
+
+    int occurence(int x) {
+        auto cur = root;
+        for(int i = B - 1; i >= 0; i--) {
+            int id = (x >> i) & 1;
+            if(!cur->child[id]) return 0;
+            cur = cur->child[id];
+        }
+        return cur->leaf;
     }
-    return ans;
-  }
-  // returns maximum of val ^ x
-  int get_max(int x) { 
-    node* cur = root;
-    int ans = 0;
-    for (int i = B - 1; i >= 0; i--) {
-      int k = x >> i & 1;
-      if (cur -> nxt[!k]) cur = cur -> nxt[!k], 
-        ans <<= 1, ans++;
-      else cur = cur -> nxt[k], ans <<= 1;
+
+    void del(int x) {
+        stack<pair<node *, int>> stck;
+        auto cur = root;
+        for(int i = B - 1; i >= 0; i--) {
+            int id = (x >> i) & 1;
+            stck.push({cur, id});
+            cur = cur->child[id];
+        }   
+        while(not stck.empty()) {
+            auto [par, id] = stck.top();
+            stck.pop();
+            auto child = par->child[id];
+            if(!child->child[0] && !child->child[1]) {
+                delete child;
+                par->child[id] = nullptr;
+            }
+            else {
+                break;
+            }
+        }
     }
-    return ans;
-  }
-  int get_min(int x) { // returns minimum of val ^ x
-    node* cur = root;
-    int ans = 0;
-    for (int i = B - 1; i >= 0; i--) {
-      int k = x >> i & 1;
-      if (cur -> nxt[k]) cur = cur -> nxt[k], 
-        ans <<= 1;
-      else cur = cur -> nxt[!k], 
-      ans <<= 1, ans++;
+
+    void remove(int x) {
+        if(occurence(x) == 1) {
+            del(x);
+            return;
+        }
+        auto cur = root;
+        for(int i = B - 1; i >= 0; i--) {
+            int id = (x >> i) & 1;
+            cur = cur->child[id];
+        }
+        cur->leaf--;
     }
-    return ans;
-  }
-  void del(node* cur) {
-    for (int i = 0; i < 2; i++) 
-      if (cur -> nxt[i]) del(cur -> nxt[i]);
-    else delete(cur);
-  }
-} t;
-int32_t main() {
-  ios_base::sync_with_stdio(0);
-  cin.tie(0);
-  int n, k;
-  cin >> n >> k;
-  int cur = 0;
-  long long ans = 1LL * n * (n + 1) / 2;
-  t.insert(cur);
-  for (int i = 0; i < n; i++) {
-    int x;
-    cin >> x;
-    cur ^= x;
-    ans -= t.query(cur, k);
-    t.insert(cur);
-  }
-  cout << ans << '\n';
-}
+
+    int get_max(int x) {
+        auto cur = root;
+        int ans = 0;
+        for(int i = B - 1; i >= 0; i--) {
+            int id = (x >> i) & 1;
+            if(cur->child[!id]) {
+                //cout << i << " " << id << " " << sz << "\n";
+                ans += (1 << i);
+                cur = cur->child[!id];
+            }
+            else if(cur->child[id]){
+                cur = cur->child[id];
+            }
+            else break;
+        }
+        return ans;
+    }
+
+} trie;
+
+void solve() {
+    int q; cin >> q;
+    trie.insert(0);
+
+    while(q--) {
+        char ch; cin >> ch;
+        if(ch == '+') {
+            int x; cin >> x;
+            trie.insert(x);
+        }
+        else if(ch == '-') {
+            int x; cin >> x;
+            trie.remove(x);
+        }
+        else {
+            int x; cin >> x;
+            cout << trie.get_max(x) << "\n";
+        }
+    }
+}  
+ 
+int main(){
+    ios_base::sync_with_stdio(0);
+    cin.tie(0);
+    int tc = 1, cs = 1;
+    //cin >> tc;
+    while(tc--) {
+        //cout << "Case " << cs++ << ": " << "\n";
+        solve();
+    }
+} 
