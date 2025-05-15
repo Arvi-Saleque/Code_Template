@@ -1,44 +1,43 @@
 struct DSU {
-    vector<int> parent, size;
-    vector<pair<int, int>> history;
-    int componentCount;
+    vector<int> par, sz;
+    int cmp;
 
-    DSU(int n) : parent(n + 1), size(n + 1, 1), componentCount(n) {
-        iota(parent.begin(), parent.end(), 0);
+    DSU(int n) : par(n + 1), sz(n + 1, 1), cmp(n) {
+        iota(par.begin(), par.end(), 0);
     }
     int find(int v) {
-        if (parent[v] != v) {
-            return find(parent[v]);
+        if (par[v] != v) {
+            return find(par[v]);
         }
-        return parent[v];
+        return par[v];
     }
 
-    bool merge(int u, int v) {
+    bool join(int u, int v) {
         u = find(u);
         v = find(v);
         if (u == v) {
             return false;
         }
-        if (size[u] < size[v]) {
+        if (sz[u] < sz[v]) {
             swap(u, v);
         }
-        history.push_back({v, size[v]});
-        history.push_back({u, size[u]});
-        parent[v] = u;
-        size[u] += size[v];
-        --componentCount;
+        history.push_back({v, sz[v]});
+        history.push_back({u, sz[u]});
+        par[v] = u;
+        sz[u] += sz[v];
+        --cmp;
 
         return true;
     }
 
     void rollback() {
-        auto [u, oldSizeU] = history.back();
+        auto [u, oldszU] = history.back();
         history.pop_back();
-        auto [v, oldSizeV] = history.back();
+        auto [v, oldszV] = history.back();
         history.pop_back();
-        parent[v] = v;
-        size[u] = oldSizeU;
-        size[v] = oldSizeV;
-        componentCount++;
+        par[v] = v;
+        sz[u] = oldszU;
+        sz[v] = oldszV;
+        cmp++;
     }
 };
