@@ -1,4 +1,4 @@
-int freq[N + 2];
+int freq[N + 2]; // frequnecy array must be global
  
 struct MO { // 0-based
  
@@ -22,9 +22,9 @@ struct MO { // 0-based
     void take_input() {
         for(auto &x : v) {
             cin >> x;
-            freq[x] = 0;
+            //freq[x] = 0;
         }
-        //compress();
+        compress();
         query_input();
     }
     void compress() {
@@ -48,26 +48,16 @@ struct MO { // 0-based
         });
     }
     void add(int x) {
+        if(freq[v[x]] == 0) cnt++;
         freq[v[x]]++;
-        if(freq[v[x]] % 2 == 1) {
-            cnt++;
-        }
-        else {
-            cnt--;
-        }
     }
     void remove(int x) {
-        if(freq[v[x]] % 2 == 1) {
-            cnt--;
-        }
-        else {
-            cnt++;
-        }
+        if(freq[v[x]] == 1) cnt--;
         freq[v[x]]--;
     }
     void print() {
         for(int i = 1; i <= q; i++) {
-            cout << (ans[i] == 0 ? "YES" : "NO") << "\n";
+            cout << ans[i] << "\n";
         }
     }
     void solve() {
@@ -77,7 +67,7 @@ struct MO { // 0-based
             while(cur_r < qi.r) add(++cur_r);
             while(cur_l < qi.l) remove(cur_l++);
             while(cur_r > qi.r) remove(cur_r--);
-            ans[qi.idx] = (cnt == 0 ? 0 : 1);
+            ans[qi.idx] = cnt;
         }
         print();
     }
