@@ -1,60 +1,84 @@
-int block_size;
-class Query {
-public:
-    int l, r, idx;
-    Query(int _l, int _r, int _i) {
-        l = _l;
-        r = _r;
-        idx = _i;
+int freq[N + 2];
+ 
+struct MO { // 0-based
+ 
+    int n, q, cnt, bl_sz;
+    vector<int> v, ans;
+ 
+    struct Q {
+        int l, r, idx;
+    };
+ 
+    vector<Q> queries;
+ 
+    MO(){}
+    MO(int n, int q) : n(n), q(q), cnt(0) {
+        bl_sz = sqrt(n);
+        v.assign(n, 0);
+        ans.assign(q + 1, 0);
+        take_input();
     }
-    bool operator < (const Query &other) const {
-        if (l / block_size != other.l / block_size)
-            return l / block_size < other.l / block_size;
-        return r < other.r;
+ 
+    void take_input() {
+        for(auto &x : v) {
+            cin >> x;
+            freq[x] = 0;
+        }
+        //compress();
+        query_input();
+    }
+    void compress() {
+        vector<int> tmp = v;
+        sort(tmp.begin(), tmp.end());
+        tmp.erase(unique(tmp.begin(), tmp.end()), tmp.end());
+        for(int i = 0; i < n; i++) {
+            v[i] = lower_bound(tmp.begin(), tmp.end(), v[i]) - tmp.begin();
+            freq[v[i]] = 0;
+        }
+    }
+    void query_input() {
+        for(int i = 1; i <= q; i++) {
+            int l, r;
+            cin >> l >> r;
+            queries.push_back({--l, --r, i});
+        }
+        sort(queries.begin(), queries.end(), [&](const Q &a, const Q &b) {
+            if (a.l / bl_sz != b.l / bl_sz) return a.l / bl_sz < b.l / bl_sz;
+            return a.r < b.r;
+        });
+    }
+    void add(int x) {
+        freq[v[x]]++;
+        if(freq[v[x]] % 2 == 1) {
+            cnt++;
+        }
+        else {
+            cnt--;
+        }
+    }
+    void remove(int x) {
+        if(freq[v[x]] % 2 == 1) {
+            cnt--;
+        }
+        else {
+            cnt++;
+        }
+        freq[v[x]]--;
+    }
+    void print() {
+        for(int i = 1; i <= q; i++) {
+            cout << (ans[i] == 0 ? "YES" : "NO") << "\n";
+        }
+    }
+    void solve() {
+        int cur_l = 0, cur_r = -1;
+        for(auto qi : queries) {
+            while(cur_l > qi.l) add(--cur_l);
+            while(cur_r < qi.r) add(++cur_r);
+            while(cur_l < qi.l) remove(cur_l++);
+            while(cur_r > qi.r) remove(cur_r--);
+            ans[qi.idx] = (cnt == 0 ? 0 : 1);
+        }
+        print();
     }
 };
-int cnt = 0;
-void add(int x, vector<int> &v, vector<int> &freq) {
-    if (freq[v[x]] == 0) cnt++;
-    freq[v[x]]++;
-}
-
-void remove(int x, vector<int> &v, vector<int> &freq) {
-    freq[v[x]]--;
-    if (freq[v[x]] == 0) cnt--;
-}
-void solve() { 
-    int n, q;
-    cin >> n >> q;
-    vector<int> v(n), freq(n);
-    block_size = sqrt(n);
-    for(int i = 0; i < n; i++) {
-        cin >> v[i];
-    }
-    // coordinate compress
-    vector<int> tmp = v;
-    sort(tmp.begin(), tmp.end());
-    tmp.erase(unique(tmp.begin(), tmp.end()), tmp.end());
-    for(int i = 0; i < n; i++) {
-        v[i] = lower_bound(tmp.begin(), tmp.end(), v[i]) - tmp.begin();
-    }
-    vector<Query> queries;
-    for(int i = 1; i <= q; i++) {
-        int l, r;
-        cin >> l >> r;
-        queries.push_back({--l, --r, i});
-    }
-    sort(queries.begin(), queries.end()); 
-    vector<int> ans(q + 1);
-    int cur_l = 0, cur_r = -1;
-    for(auto qi : queries) {
-        while(cur_l > qi.l) add(--cur_l, v, freq);
-        while(cur_r < qi.r) add(++cur_r, v, freq);
-        while(cur_l < qi.l) remove(cur_l++, v, freq);
-        while(cur_r > qi.r) remove(cur_r--, v, freq);
-        ans[qi.idx] = cnt;
-    }
-    for(int i = 1; i <= q; i++) {
-        cout << ans[i] << "\n";
-    }
-}  
