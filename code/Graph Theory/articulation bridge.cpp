@@ -9,7 +9,7 @@ void dfs(int u, int p = -1) {
     for(auto v : g[u]) {
         if(v == p) continue;
         if(vis[v]) {
-            low[u] = min(low[u], low[v]);
+            low[u] = min(low[u], disc[v]);
         }
         else {
             dfs(v, u);
