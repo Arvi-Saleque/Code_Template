@@ -1,23 +1,20 @@
 class HLD : public SegTlazy {
 public:
     vector<vector<pair<int, int>>> g;
-    vector<vector<int>> dp;
-    vector<int> heavy, head, pos, par, depth, val;
-    int cur, n, Lg;
+    vector<vector<int>> par;
+    vector<int> heavy, head, pos, depth, val;
+    int timer, n, height;
  
-    HLD(int sz) : SegTlazy(sz) {
-        n = sz;
-        cur = 0;
-        Lg = 6;
+    HLD(int n) : n(n), SegTlazy(n) {
+        timer = 0;
+        height = 31 - __builtin_clz(n);
         heavy.assign(n + 1, 0);
         head.assign(n + 1, 0);
         pos.assign(n + 1, 0);
-        par.assign(n + 1, 0);
+        par.assign(n + 1, vector<int>(height + 1));
         depth.assign(n + 1, 0);
         val.assign(n + 1, 0);
         g.resize(n + 1);
-        dp.resize(Lg + 1);
-        for (int i = 0;i < Lg;i++) dp[i].resize(n + 1, 0);
     } 
  
     void add_edge(int u, int v, int w) {
@@ -25,38 +22,27 @@ public:
         g[v].push_back({u, w});
     }
  
-    int dfs(int u) {
+    int dfs(int u = 1, int p = 0) {
         int sub = 1, big = 0;
-        for(int i = 1; i < Lg; i++) {
-            dp[i][u] = dp[i - 1][dp[i - 1][u]];
+        par[u][0] = p;
+        for(int j = 1; j <= height; j++) {
+            par[u][j] = par[par[u][j - 1]][j - 1];
         }
-        for (auto [v, w] : g[u]) {
-            if (v == par[u]) continue;
-            par[v] = u;
-            dp[0][v] = u;
+        for (auto [v, w] : g[u]) if(v != p) {
             depth[v] = depth[u] + 1;
             val[v] = w;
-            int subsize = dfs(v);
+            int subsize = dfs(v, u);
             if (subsize > big) big = subsize, heavy[u] = v;
             sub += subsize;
         }
         return sub;
     }
-    int lca(int u, int v) {
-        if (depth[v] < depth[u])swap(u, v);
-        int diff = depth[v] - depth[u];
-        for (int i = 0;i < Lg;i++)
-            if (diff & (1 << i)) v = dp[i][v];
-        for (int i = Lg - 1;i >= 0;i--)
-            if (dp[i][u] != dp[i][v]) u = dp[i][u], v = dp[i][v];
-        return u == v ? u : dp[0][u];
-    }
     void decompose(int u, int h) {
         head[u] = h, 
-        pos[u] = ++cur;
+        pos[u] = ++timer;
         if (heavy[u]) decompose(heavy[u], h);
         for (auto [v, w] : g[u]) {
-            if (v != par[u] && v != heavy[u]) decompose(v, v);
+            if (v != par[u][0] && v != heavy[u]) decompose(v, v);
         }
     }
     void makeHLD(int root = 1) {
@@ -68,9 +54,9 @@ public:
         SegTlazy::build(1, 1, n);
     }
     // if value on edge then call isEdge = 1
-    ll Query(int u, int v, bool isEdge = 0) {
+    ll Query(int u, int v, bool isEdge = 1) {
         node ret;
-        for (; head[u] != head[v]; v = par[head[v]]) {
+        for (; head[u] != head[v]; v = par[head[v]][0]) {
             if (depth[head[u]] > depth[head[v]]) swap(u, v);
             node tmp = SegTlazy::query(1, 1, n, pos[head[v]], pos[v]);
             SegTlazy::merge(ret, ret, tmp);
@@ -81,7 +67,7 @@ public:
         return ret.val;
     }
     void Update(int u, int v, int val, bool isEdge = 0) {
-        for (; head[u] != head[v]; v = par[head[v]]) {
+        for (; head[u] != head[v]; v = par[head[v]][0]) {
             if (depth[head[u]] > depth[head[v]]) swap(u, v);
           //  cout<<"Updating:"<<v<<' '<<head[v]<<' '<<val<<endl;
             SegTlazy::upd(1, 1, n, pos[head[v]], pos[v], val);
