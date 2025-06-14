@@ -8,17 +8,13 @@ then the added points add to all players of a team
 so we do self[v] += self[p] so here self[p] 
 */
 struct DSU {
-    vector<ll> par, rank, sz, self, team;
+    vector<ll> par, rank, sz;
     int n;
-    DSU(int n) : n(n), par(n + 1), rank(n + 1, 0), sz(n + 1, 1), self(n + 1, 0), team(n + 1, 0) {
+    DSU(int n) : n(n), par(n + 1), rank(n + 1, 0), sz(n + 1, 1) {
         iota(par.begin(), par.end(), 0);
     }
-    int find(int v) {                      // path-compression + offset update
-        if (par[v] == v) return v;
-        int p = par[v];
-        par[v] = find(p);
-        self[v] += self[p];                // accumulate the shift while climbing
-        return par[v];
+    int find(int v) {
+        return (par[v] == v ? v : (par[v] = find(par[v])));
     }
     bool same(int u, int v) {
         return find(u) == find(v);
@@ -26,18 +22,15 @@ struct DSU {
     int get_size(int v) {
         return sz[find(v)];
     }
-    ll get_ans(int u) {
-        int p = find(u);
-        return team[p] + self[u];
+    int count() {
+        return n; 
     }
     void join(int u, int v) {
         u = find(u);
         v = find(v);
-        if(u == v) return;
         n--;
         if (rank[v] > rank[u]) swap(u, v);
         par[v] = u;
-        self[v] = team[v] - team[u];
         sz[u] += sz[v];
         if (rank[u] == rank[v]) rank[u]++;
         // u is the parent;

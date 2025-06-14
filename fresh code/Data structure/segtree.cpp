@@ -148,3 +148,5 @@ public:
 tree.upd(1, 1, n, l, l, a);
 if(l + 1 <= r) tree.upd(1, 1, n, l + 1, r, d);
 if(r + 1 <= n) tree.upd(1, 1, n, r + 1, r + 1, -(a + 1LL * (r - l) * d));
+
+

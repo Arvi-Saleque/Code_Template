@@ -2,7 +2,7 @@ class LCA {
 public:
     int n;
     vector<vector<int>> g, par;
-    vector<int> dep;
+    vector<int> dep, sz;
     int lg;
     LCA(){}
     LCA(int n) {
@@ -11,12 +11,14 @@ public:
         lg = log2(n) + 1;
         par.assign(n + 1, vector<int>(lg + 1, 0));
         dep.assign(n + 1, 0);
+        sz.assign(n + 1, 0);
         take_input();
     }
     void take_input() {
         for(int i = 1; i < n; i++) {
             int u, v;
             cin >> u >> v;
+            u++, v++;
             g[u].push_back(v);
             g[v].push_back(u);
         }
@@ -24,11 +26,15 @@ public:
     void dfs(int u = 1, int p = 0) {
         par[u][0] = p;
         dep[u] = dep[p] + 1;
+        sz[u] = 1;
         for(int i = 1; i <= lg; i++) {
             par[u][i] = par[par[u][i - 1]][i - 1];
         }
-        for(auto v : g[u]) if(v != p) {
-            dfs(v, u);
+        for(auto v : g[u]) {
+            if(v != p) {
+                dfs(v, u);
+                sz[u] += sz[v];
+            } 
         }
     }
     int lca(int u, int v) {

@@ -101,7 +101,7 @@
     - Try all x
     - LCM = p^a * Q^b
 
-27. Sum from k elements among [1..6]:
+27. Sum from k elements among [1e6]:
     - Min sum = 1 + 2 + 3 = 6
     - Max sum = 4 + 5 + 6 = 15
 

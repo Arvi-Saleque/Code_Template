@@ -3,11 +3,6 @@
 // if i need to clauclate connected componenet on reverse graph 
 // means the edge are connected which are not present in the input
 // so just simple as normal connected component
-
-#include<bits/stdc++.h>
-using namespace std;
-typedef long long int ll;
-const int N = 1e6 + 2, mod = 1000000007;
 class DSU
 {
 public:

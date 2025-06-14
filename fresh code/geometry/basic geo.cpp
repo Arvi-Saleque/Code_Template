@@ -71,12 +71,6 @@ Area = (sqrt(3) / 4) * a^2
 Area = (b / 4) * sqrt(4a^2 - b^2)
 
 
-
-
-
-
-
-
 // 3D Volume Formulas
 // Symbol Definitions:
 // l = length, w = width, h = height
