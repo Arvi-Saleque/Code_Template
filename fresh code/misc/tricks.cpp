@@ -154,4 +154,30 @@
     - dp[i] = number of distinct subsequences using first i characters
     - Use last[ch] to store the last occurrence index of each character
 
+39. Block size optimization:
+    - Block size is not always sqrt(n)
+    - If complexity is O(n/b + b), minimize by solving n/b = b → b = sqrt(n)
+
+40. MO's Algorithm:
+    - Can solve without remove operation
+    - For L in same block, let R keep increasing
+    - For each range, start L from the end of the block
+
+41. Sqrt Decomposition by query time:
+    - Keep overall solution and sqrt(n) updates in a vector
+    - For each query, iterate over the updates (<= sqrt(n) cost)
+    - When size exceeds sqrt(n), apply updates to global structure in O(n)
+
+42. Distinct values from sum:
+    - If sum of N positive numbers is S, there are at most sqrt(S) distinct values
+
+43. Randomization:
+    - Use when deterministic structure is hard or fails
+    - Try random order/seed to avoid worst-case paths or collisions
+
+44. Baby Step Giant Step:
+    - Used for discrete log: a^x = b mod p
+    - Time: O(sqrt(p)), Space: O(sqrt(p))
+    - Precompute a^j (baby steps), match with b * a^(-i√p) (giant steps)
+
 
