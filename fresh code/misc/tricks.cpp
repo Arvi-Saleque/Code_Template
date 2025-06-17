@@ -178,6 +178,6 @@
 44. Baby Step Giant Step:
     - Used for discrete log: a^x = b mod p
     - Time: O(sqrt(p)), Space: O(sqrt(p))
-    - Precompute a^j (baby steps), match with b * a^(-i√p) (giant steps)
+    - Precompute a^j (baby steps), match with b * a^(-irootp) (giant steps)
 
 
