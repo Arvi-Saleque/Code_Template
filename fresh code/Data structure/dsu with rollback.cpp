@@ -1,127 +1,172 @@
-// Stores information needed to undo a union operation
-struct dsu_save {
-  int v, rnkv, u, rnku;
-  dsu_save() {}
-  dsu_save(int _v, int _rnkv, int _u, int _rnku)
-    : v(_v), rnkv(_rnkv), u(_u), rnku(_rnku) { }
+
+struct DSU {
+    struct Op {
+        char type;      // 'M' = merge, 'V' = add value, 'X' = dummy
+        int  a, b;      // merge: childRoot=a, parentRoot=b
+        long long savedSum; // sum of component a before merge   OR   sum(root) snapshot for 'V'
+        long long delta;    // only for 'V'
+    };
+
+    vector<int> par, sz;          // parent and size per vertex
+    vector<long long> compSum,    // current sum for every component root
+                      val;        // individual vertex value
+    vector<Op> stk;               // undo stack
+    int comps;                    // current number of components
+
+    DSU() {}
+    DSU(int n, const vector<long long>& init){ initDSU(n,init); }
+
+    void initDSU(int n, const vector<long long>& init){
+        par.resize(n);  iota(par.begin(), par.end(), 0);
+        sz.assign(n, 1);
+        val.resize(n);  compSum.resize(n);
+        for(int i=0;i<n;++i){
+            val[i] = init.empty()? 0LL : init[i];
+            compSum[i] = val[i];
+        }
+        stk.clear();
+        comps = n;
+    }
+
+    int find(int x) const { return (x==par[x]) ? x : find(par[x]); }
+
+    /* ---- merge two components (with rollback support) ---- */
+    void merge(int u,int v){
+        u = find(u); v = find(v);
+        if(u==v){                      // edge inside the same component
+            stk.push_back({'X',0,0,0,0});
+            return;
+        }
+        if(sz[u] > sz[v]) swap(u,v);   // union by size, u becomes child
+        stk.push_back({'M',u,v,compSum[u],0});
+        par[u]  = v;
+        sz[v]  += sz[u];
+        compSum[v] += compSum[u];
+        --comps;
+    }
+
+    /* ---- vertex value increase (persistent) ---- */
+    void addValue(int v,long long d){
+        int r = find(v);
+        stk.push_back({'V',v,r,compSum[r],d});
+        val[v]      += d;
+        compSum[r]  += d;
+    }
+
+    /* ---- rollback last operation ---- */
+    void undo(){
+        auto op = stk.back(); stk.pop_back();
+        if(op.type=='X') return;             // dummy
+        if(op.type=='M'){
+            int child = op.a, parent = op.b;
+            par[child] = child;
+            sz[parent] -= sz[child];
+            compSum[parent] -= op.savedSum;
+            ++comps;
+        }else{                               // 'V'
+            int vtx = op.a, root = op.b;
+            val[vtx]      -= op.delta;
+            compSum[root]  = op.savedSum;
+        }
+    }
+
+    long long sumOfComp(int v){ return compSum[ find(v) ]; }
 };
-
-// Disjoint Set Union (DSU) with rollback support
-struct dsu_with_rollbacks {
-  vector<int> p, rnk;     // Parent and rank arrays
-  int comps;              // Number of connected components
-  stack<dsu_save> op;     // Stack to store history for rollback
-
-  dsu_with_rollbacks() {}
-  dsu_with_rollbacks(int n) {
-    p.resize(n);
-    rnk.resize(n);
-    for (int i = 0; i < n; i++) {
-      p[i] = i;           // Each node is its own parent
-      rnk[i] = 0;         // Initial rank is 0
-    }
-    comps = n;            // Initially, each node is a separate component
-  }
-
-  // Find representative of a set (no path compression)
-  int find_set(int v) { return (v == p[v]) ? v : find_set(p[v]); }
-
-  // Union two sets, return true if merged
-  bool unite(int v, int u) {
-    v = find_set(v);
-    u = find_set(u);
-    if (v == u) return false; // Already in the same set
-
-    comps--; // One less component after union
-
-    // Union by rank
-    if (rnk[v] > rnk[u]) swap(v, u);
-
-    // Save state before union for rollback
-    op.push(dsu_save(v, rnk[v], u, rnk[u]));
-
-    p[v] = u; // Union
-    if (rnk[u] == rnk[v]) rnk[u]++; // Increase rank if same
-
-    return true;
-  }
-
-  // Undo the last union operation
-  void rollback() {
-    if (op.empty()) return;
-    dsu_save x = op.top(); op.pop();
-    comps++; // Restore component count
-
-    // Restore parent and rank values
-    p[x.v] = x.v;
-    rnk[x.v] = x.rnkv;
-    p[x.u] = x.u;
-    rnk[x.u] = x.rnku;
-  }
+struct Event{                   // stored inside the segment tree
+    bool isEdge;                // true = edge, false = value add
+    int u,v;                    // edge: (u,v) ; value: (v,delta)
+    long long delta;
 };
-
-// Represents a union query
-struct query {
-  int v, u;
-  bool united; // Whether this union actually merged components
-  query(int _v, int _u) : v(_v), u(_u) {}
+struct SegTree{
+    int n;                                  // number of leaves (Q)
+    vector<vector<Event>> box;              // events per segment node
+    SegTree(int _n=0){ init(_n); }
+    void init(int _n){ n=_n; box.assign(4*(n+2),{}); }
+    void add(int idx,int l,int r,int ql,int qr,const Event& e){
+        if(ql>qr) return;
+        if(l==ql && r==qr){ box[idx].push_back(e); return; }
+        int m=(l+r)>>1;
+        add(idx<<1,l,m,ql,min(qr,m),e);
+        add(idx<<1|1,m+1,r,max(ql,m+1),qr,e);
+    }
+    void addRange(int l,int r,const Event& e){ if(l<=r) add(1,0,n-1,l,r,e); }
 };
+struct RawQ{ int tp,u,v; long long x; };   // raw query data
 
-// Segment tree structure to handle time intervals of queries
-struct QueryTree {
-  vector<vector<query>> t;  // Segment tree nodes store query lists
-  dsu_with_rollbacks dsu;   // DSU with rollback support
-  int T;                    // Total time steps
+int main(){
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
 
-  QueryTree() {}
-  QueryTree(int _T, int n) : T(_T) {
-    dsu = dsu_with_rollbacks(n); // Initialize DSU
-    t.resize(4 * T + 4);         // Resize segment tree
-  }
+    int N,Q;                      // #vertices, #queries
+    if(!(cin>>N>>Q)) return 0;
 
-  // Add query to segment tree in range [ul, ur]
-  void add_to_tree(int v, int l, int r, int ul, int ur, query& q) {
-    if (ul > ur) return;
-    if (l == ul && r == ur) {
-      t[v].push_back(q);
-      return;
-    }
-    int mid = (l + r) / 2;
-    add_to_tree(2 * v, l, mid, ul, min(ur, mid), q);
-    add_to_tree(2 * v + 1, mid + 1, r, max(ul, mid + 1), ur, q);
-  }
+    vector<long long> init(N);
+    for(auto &x:init) cin>>x;
 
-  // Public method to insert query in range [l, r]
-  void add_query(query q, int l, int r) {
-    add_to_tree(1, 0, T - 1, l, r, q);
-  }
-
-  // DFS traversal of segment tree to apply queries and compute answers
-  void dfs(int v, int l, int r, vector<int>& ans) {
-    // Apply all queries at current segment
-    for (query& q : t[v]) {
-      q.united = dsu.unite(q.v, q.u);
+    /* -------- read all queries first (offline) ---------------- */
+    vector<RawQ> q(Q);
+    for(int i=0;i<Q;++i){
+        cin>>q[i].tp;
+        if(q[i].tp==0||q[i].tp==1){
+            cin>>q[i].u>>q[i].v;
+        }else if(q[i].tp==2){
+            cin>>q[i].v>>q[i].x;
+        }else if(q[i].tp==3){
+            cin>>q[i].v;
+        } /* NEW-4 : type 4 has no extra input */
     }
 
-    // If leaf node, store current number of components
-    if (l == r) {
-      ans[l] = dsu.comps;
-    } else {
-      int mid = (l + r) / 2;
-      dfs(2 * v, l, mid, ans);       // Recurse on left child
-      dfs(2 * v + 1, mid + 1, r, ans); // Recurse on right child
+    /* -------- build interval structure ------------------------ */
+    SegTree seg(Q);
+    unordered_map<long long,int> openEdge;          // edge -> start time
+    auto key=[&](int a,int b){ if(a>b) swap(a,b); return (1LL*a<<20)|b; };
+
+    for(int t=0;t<Q;++t){
+        int tp=q[t].tp;
+        if(tp==0){                         // edge insert
+            openEdge[key(q[t].u,q[t].v)]=t;
+        }else if(tp==1){                   // edge delete
+            long long k=key(q[t].u,q[t].v);
+            int l=openEdge[k], r=t-1;
+            seg.addRange(l,r,{true,q[t].u,q[t].v,0});
+            openEdge.erase(k);
+        }else if(tp==2){                   // vertex value add
+            seg.addRange(t,Q-1,{false,q[t].v,0,q[t].x});
+        }
+    }
+    /* edges never removed -> alive until Q-1 */
+    for(auto [k,l]:openEdge){
+        int u=k>>20, v=k&((1<<20)-1);
+        seg.addRange(l,Q-1,{true,u,v,0});
     }
 
-    // Rollback changes for this segment
-    for (query q : t[v]) {
-      if (q.united) dsu.rollback();
-    }
-  }
+    /* -------- DFS over the segment tree with rollback DSU ----- */
+    DSU dsu(N,init);
+    vector<long long> out;   out.reserve(Q);        // printed answers
 
-  // Start processing and return final answers
-  vector<int> solve() {
-    vector<int> ans(T);
-    dfs(1, 0, T - 1, ans);
-    return ans;
-  }
-};
+    function<void(int,int,int)> dfs=[&](int idx,int l,int r){
+        /* apply events stored in this segment */
+        for(const auto &ev:seg.box[idx]){
+            if(ev.isEdge) dsu.merge(ev.u,ev.v);
+            else          dsu.addValue(ev.u,ev.delta);
+        }
+
+        if(l==r){           // leaf = one specific time moment
+            int tp=q[l].tp;
+            if(tp==3) out.push_back(dsu.sumOfComp(q[l].v));
+            else if(tp==4) out.push_back(dsu.comps);           // NEW-4
+        }else{
+            int m=(l+r)>>1;
+            dfs(idx<<1,l,m);
+            dfs(idx<<1|1,m+1,r);
+        }
+
+        /* roll back this segment’s modifications */
+        for(size_t i=0;i<seg.box[idx].size();++i) dsu.undo();
+    };
+    if(Q) dfs(1,0,Q-1);
+
+    /* -------- print answers in the exact order they were asked */
+    for(long long v:out) cout<<v<<"\n";
+    return 0;
+}
