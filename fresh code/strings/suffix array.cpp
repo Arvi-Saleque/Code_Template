@@ -73,50 +73,60 @@ struct SuffixArray {
         return min(st[k][l], st[k][r - (1 << k) + 1]);
     }
 
-    // Returns the range [l, r-1] in the suffix array where the pattern appears
-    // If pattern is not found, returns {-1, -1}
-    pair<int, int> rangeSearch(const string& pat) {
-        int l = 0, r = n;
-        while (l < r) {
-            int m = (l + r) / 2;
-            if (s.compare(sa[m], pat.size(), pat) < 0) l = m + 1;
-            else r = m;
+    // Binary search for pattern range in suffix array
+    pair<int, int> rangeSearch(const string& pat, int &L, int &R, int pos) {
+        //cout << L << " " << R << "\n";
+        int lo = L, hi = R, mid, ans = -1;
+ 
+        while(lo <= hi) {
+            mid = (lo + hi) >> 1;
+            if(sa[mid] + pos >= n || s[sa[mid] + pos] < pat[pos]) {
+                lo = mid + 1;
+            }
+            else {
+                ans = mid;
+                hi = mid - 1;
+            }
         }
-        int left = l;
-        r = n;
-        while (l < r) {
-            int m = (l + r) / 2;
-            if (s.compare(sa[m], pat.size(), pat) <= 0) l = m + 1;
-            else r = m;
+ 
+        if(ans == -1) return {-1, -1};
+ 
+        int left = ans;
+        lo = ans, hi = R, ans = -1;
+        while(lo <= hi) {
+            mid = (lo + hi) >> 1;
+            if(sa[mid] + pos >= n || s[sa[mid] + pos] <= pat[pos]) {
+                ans = mid;
+                lo = mid + 1;
+            }
+            else {
+                hi = mid - 1;
+            }
         }
-        int right = l;
-        if (left == right) return {-1, -1};
-        return {left, right - 1};
+        if(ans == -1) return {-1, -1};
+        int right = ans;
+        return {left, right};
     }
-
-    // Returns the first (1-based) position where pattern occurs, or -1 if absent
-    int findPattern(const string& pat) {
-        auto [l, r] = rangeSearch(pat);
-        if (l == -1) return -1;
-        return rangeMin(l, r) + 1;
+ 
+    ll query(const string &p, int &L, int &R, int pos) {
+        auto [l, r] = rangeSearch(p, L, R, pos);
+        if(l == -1) return -1;
+        L = l, R = r;
+        //cout << p << " " << l << " " << r << "\n";
+        return (r - l + 1);
     }
-
-    // Returns how many times pattern appears in the string
-    int countPattern(const string& pat) {
-        auto [l, r] = rangeSearch(pat);
-        if (l == -1) return 0;
-        return r - l + 1;
-    }
-
-    // Returns the total number of distinct substrings in the string
-    long long countDistinctSubstrings() {
-        long long total = 0;
-        for (int i = 0; i < n; i++) {
-            int suffix_len = n - sa[i];
-            int lcp_len = (i == 0 ? 0 : lcp[i - 1]);
-            total += suffix_len - lcp_len;
+ 
+    ll occurence_as_substring(const string &t) {
+        string p;
+        int ans = 0;
+        int l = 0, r = n - 1;
+        for(int i = 0; i < t.size(); i++) {
+            p.push_back(t[i]);
+            ans = query(p, l, r, i);
+            if(ans == -1) break;
         }
-        return total;
+        if(ans == -1) ans = 0;
+        return ans;
     }
 
     // Returns the number of distinct substrings of each length
