@@ -204,3 +204,139 @@ vector<PT> ConvexHull(vector<PT>&p, int n) {
     hull.resize(sz - 1);
     return hull;
 }   
+
+// Projection of point c onto line ab
+PT project_from_point_to_line(PT a, PT b, PT c) {
+    return a + (b - a) * dot(c - a, b - a) / dot(b - a, b - a);
+}
+
+// Reflection of point c across line ab
+PT reflection_from_point_to_line(PT a, PT b, PT c) {
+    PT p = project_from_point_to_line(a, b, c);
+    return p + (p - c);
+}
+
+// Minimum distance from point c to line ab
+ld dist_from_point_to_line(PT a, PT b, PT c) {
+    return fabs(cross(b - a, c - a)) / sqrtl(dist2(a, b));
+}
+
+// Minimum distance from point c to segment ab
+ld dist_from_point_to_seg(PT a, PT b, PT c) {
+    ll r = dist2(a, b);
+    if (r == 0) return dist(c, a);
+    ld t = max(0.0L, min(1.0L, (ld)dot(c - a, b - a) / r));
+    PT proj = a + (b - a) * t;
+    return dist(c, proj);
+}
+
+// Minimum distance between two segments ab and cd
+ld dist_from_seg_to_seg(PT a, PT b, PT c, PT d) {
+    PT dummy;
+    if (seg_seg_intersection(a, b, c, d, dummy)) return 0;
+    return min({
+        dist_from_point_to_seg(a, b, c),
+        dist_from_point_to_seg(a, b, d),
+        dist_from_point_to_seg(c, d, a),
+        dist_from_point_to_seg(c, d, b)
+    });
+}
+
+// Checks if a polygon is strictly convex
+bool is_convex(const vector<PT>& p) {
+    int n = p.size();
+    bool has_pos = false, has_neg = false;
+    for (int i = 0; i < n; i++) {
+        ll z = cross2(p[i], p[(i + 1) % n], p[(i + 2) % n]);
+        has_pos |= (z > 0);
+        has_neg |= (z < 0);
+    }
+    return !(has_pos && has_neg);
+}
+
+// Centroid (center of mass) of a polygon
+PT centroid(const vector<PT>& p) {
+    ld A = 0;
+    PT c(0, 0);
+    int n = p.size();
+    for (int i = 0; i < n; i++) {
+        ll cross_val = cross(p[i], p[(i + 1) % n]);
+        A += cross_val;
+        c.x += (p[i].x + p[(i + 1) % n].x) * cross_val;
+        c.y += (p[i].y + p[(i + 1) % n].y) * cross_val;
+    }
+    A *= 0.5;
+    c.x /= (6.0 * A);
+    c.y /= (6.0 * A);
+    return c;
+}
+
+// Angle between vectors (in radians)
+ld get_angle(PT a, PT b) {
+    ld costheta = (ld)dot(a, b) / sqrtl(dist2(a, {0, 0}) * dist2(b, {0, 0}));
+    return acos(max((ld)-1.0, min((ld)1.0, costheta)));
+}
+
+// Intersection point of two infinite lines (ab and cd), returns false if parallel
+bool line_line_intersection(PT a, PT b, PT c, PT d, PT &ans) {
+    ld a1 = a.y - b.y, b1 = b.x - a.x, c1 = cross(a, b);
+    ld a2 = c.y - d.y, b2 = d.x - c.x, c2 = cross(c, d);
+    ld det = a1 * b2 - a2 * b1;
+    if (fabs(det) < eps) return false;
+    ans = PT((b1 * c2 - b2 * c1) / det, (c1 * a2 - a1 * c2) / det);
+    return true;
+}
+
+// Check if lines ab and cd are parallel or collinear
+// 0 = not parallel, 1 = parallel, 2 = collinear
+int is_parallel(PT a, PT b, PT c, PT d) {
+    ld cross1 = fabs(cross(b - a, d - c));
+    if (cross1 < eps) {
+        if (fabs(cross(a - b, a - c)) < eps && fabs(cross(c - d, c - a)) < eps) return 2;
+        else return 1;
+    }
+    return 0;
+}
+
+// Angle bisector vector of angle <abc
+PT angle_bisector(PT a, PT b, PT c) {
+    PT p = a - b, q = c - b;
+    return p + q * sqrtl((ld)dot(p, p) / dot(q, q));
+}
+
+// Point at distance d from a towards b (along line ab)
+PT point_along_line(PT a, PT b, ld d) {
+    assert(a != b);
+    PT v = b - a;
+    ld len = sqrtl(dot(v, v));
+    return a + v * (d / len);
+}
+
+// Rotate a point counter-clockwise by angle t (radians) around origin
+PT rotateccw(PT a, ld t) {
+    return PT(a.x * cos(t) - a.y * sin(t), a.x * sin(t) + a.y * cos(t));
+}
+
+// Rotate a point clockwise by angle t (radians) around origin
+PT rotatecw(PT a, ld t) {
+    return PT(a.x * cos(t) + a.y * sin(t), -a.x * sin(t) + a.y * cos(t));
+}
+
+// 90-degree counter-clockwise rotation
+PT rotateccw90(PT a) { return PT(-a.y, a.x); }
+
+// 90-degree clockwise rotation
+PT rotatecw90(PT a) { return PT(a.y, -a.x); }
+
+// Check point in triangle (a, b, c)
+// -1 = inside, 0 = on edge, 1 = outside
+int is_point_in_triangle(PT a, PT b, PT c, PT p) {
+    if (sign(cross(b - a, c - a)) < 0) swap(b, c);
+    int c1 = sign(cross(b - a, p - a));
+    int c2 = sign(cross(c - b, p - b));
+    int c3 = sign(cross(a - c, p - c));
+    if (c1 < 0 || c2 < 0 || c3 < 0) return 1;
+    if (c1 + c2 + c3 != 3) return 0;
+    return -1;
+}
+
