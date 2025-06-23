@@ -1,158 +1,134 @@
-/* Hungarian Algorithm for Minimum Cost Maximum Matching
- * Complexity: O(n^3), but optimized
- * Finds **minimum cost** perfect matching in a complete bipartite graph.
- * To find **maximum cost** matching, negate all edge costs and negate final answer.
- * 1-indexed input.
- */
-
-struct Hungarian {
-  static const int N = 505;
-  long long c[N][N];      // Cost matrix: c[u][v] = cost of matching u with v
-  long long fx[N], fy[N]; // fx = potentials for left side, fy = for right
-  long long d[N];         // d[v] = reduced cost estimates during BFS
-  int l[N], r[N];         // l[u] = match for u in left set, r[v] = match for v in right set
-  int arg[N], trace[N];   // arg[v] = best left node for v, trace = path reconstruction
-  queue<int> q;           // Queue for BFS
-  int start, finish, n;
-  const long long inf = 1e18;
-
-  Hungarian() {}
-
-  // Constructor: Initialize for matching between n1 and n2 nodes (1-indexed)
-  Hungarian(int n1, int n2) : n(max(n1, n2)) {
-    for (int i = 1; i <= n; ++i) {
-      fy[i] = l[i] = r[i] = 0;
-      for (int j = 1; j <= n; ++j) c[i][j] = inf;
+struct Hungerian {
+    int n;
+    vector<vector<ll>> cost, reduced_cost;
+    vector<int> whichj, whichi, responsiblei, parentj;
+    bitset<MAXN> vis_row, vis_col;
+    vector<ll> fx, fy, slack;
+    Hungerian(){}
+    Hungerian(int n, vector<vector<ll>> cost) : n(n), cost(cost),
+                             whichi(n, -1), whichj(n, -1), fx(n), fy(n, 0),
+                             reduced_cost(n, vector<ll>(n)),
+                             slack(n), responsiblei(n), parentj(n) {
+        build();
     }
-  }
-
-  // Add edge with cost from node u (left) to v (right)
-  void add_edge(int u, int v, long long cost) {
-    c[u][v] = min(c[u][v], cost); // If multiple edges exist, keep the minimum cost
-  }
-
-  // Returns reduced cost of matching u and v
-  inline long long getC(int u, int v) {
-    return c[u][v] - fx[u] - fy[v];
-  }
-
-  // Initializes BFS for current left node `start`
-  void initBFS() {
-    while (!q.empty()) q.pop();
-    q.push(start);
-    for (int i = 0; i <= n; ++i) trace[i] = 0;
-    for (int v = 1; v <= n; ++v) {
-      d[v] = getC(start, v);
-      arg[v] = start;
-    }
-    finish = 0;
-  }
-
-  // Performs BFS to find an augmenting path from `start`
-  void findAugPath() {
-    while (!q.empty()) {
-      int u = q.front(); q.pop();
-      for (int v = 1; v <= n; ++v) {
-        if (!trace[v]) {
-          long long w = getC(u, v);
-          if (!w) { // Edge is tight (reduced cost 0)
-            trace[v] = u;
-            if (!r[v]) {
-              finish = v; // Found an augmenting path to unmatched right node
-              return;
+    void build() {
+        for(int i = 0; i < n; i++) {
+            ll mn = 2e18;
+            for(int j = 0; j < n; j++) {
+                mn = min(cost[i][j], mn);
             }
-            q.push(r[v]);
-          }
-          if (d[v] > w) { // Relax the edge
-            d[v] = w;
-            arg[v] = u;
-          }
+            fx[i] = mn;
         }
-      }
+        assign();
     }
-  }
-
-  // Updates potentials when no augmenting path found
-  void subX_addY() {
-    long long delta = inf;
-    // Find smallest slack over all unvisited right nodes
-    for (int v = 1; v <= n; ++v) {
-      if (!trace[v] && d[v] < delta) {
-        delta = d[v];
-      }
+    ll getRedueced(int i, int j) {
+        return cost[i][j] - fx[i] - fy[j];
     }
-
-    // Update potentials
-    fx[start] += delta;
-    for (int v = 1; v <= n; ++v) {
-      if (trace[v]) {
-        int u = r[v];
-        fy[v] -= delta;
-        fx[u] += delta;
-      } else {
-        d[v] -= delta;
-      }
-    }
-
-    // Try to extend the tree with tight edges
-    for (int v = 1; v <= n; ++v) {
-      if (!trace[v] && d[v] == 0) {
-        trace[v] = arg[v];
-        if (!r[v]) {
-          finish = v;
-          return;
+    void addX_subY() {
+        // try to addX_subY with new zeros using slack concetp
+        ll delta = 2e18;
+        for(int i = 0; i < n; i++) {
+            if(vis_row[i]) {
+                for(int j = 0 ; j < n; j++) {
+                    if(!vis_col[j]) {
+                        delta = min(delta, getRedueced(i, j));
+                    }
+                }
+            }
         }
-        q.push(r[v]);
-      }
+        for(int i = 0; i < n; i++) {
+            if(vis_row[i]) fx[i] += delta;
+        }
+        for(int i = 0; i < n; i++) {
+            if(vis_col[i]) fy[i] -= delta;
+        }
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                reduced_cost[i][j] = cost[i][j] - fx[i] - fy[j];
+            }
+        }
     }
-  }
+    bool find_augment_path() {
+        vis_row.reset();
+        vis_col.reset();
+        int source = -1;
+        for(int i = 0; i < n; i++) {
+            if(whichj[i] == -1) {
+                source = i;
+                break;
+            }
+        }
+        if(source == -1) return 1;
+        parentj.assign(n, -1);
+        queue<int> Q;
+        Q.push(source);
+        vis_row[source] = 1;
 
-  // Augments the matching using the path traced to `finish`
-  void Enlarge() {
-    while (finish) {
-      int u = trace[finish];
-      int nxt = l[u];
-      l[u] = finish;
-      r[finish] = u;
-      finish = nxt;
-    }
-  }
+        for (int j = 0; j < n; j++) {
+            slack[j] = getRedueced(source, j);
+            responsiblei[j] = source;
+        }
 
-  // Computes the minimum cost maximum matching
-  // Returns the total cost of the matching
-  long long maximum_matching() {
-    // Initialize potentials fx and fy
-    for (int u = 1; u <= n; ++u) {
-      fx[u] = c[u][1];
-      for (int v = 1; v <= n; ++v) {
-        fx[u] = min(fx[u], c[u][v]);
-      }
-    }
+        while(not Q.empty()) {
+            int u = Q.front(); Q.pop();
+            for(int j = 0; j < n; j++) {
+                if(getRedueced(u, j) == 0 && !vis_col[j]) {
+                    vis_col[j] = 1;
+                    par_j[j] = u;
 
-    for (int v = 1; v <= n; ++v) {
-      fy[v] = c[1][v] - fx[1];
-      for (int u = 1; u <= n; ++u) {
-        fy[v] = min(fy[v], c[u][v] - fx[u]);
-      }
+                    if(whichi[j] == -1) {
+                        int cur_j = j;
+                        while(cur_j != -1) {
+                            int assigned_i = par_j[cur_j]; // which i assign for this job
+                            int next_j = whichj[assigned_i];
+                            whichj[assigned_i] = cur_j;
+                            whichi[cur_j] = assigned_i;
+                            cur_j = next_j;
+                        }
+                        return 1;
+                    }
+                    else {
+                        int assigned_i = whichi[j];
+                        if(!vis_row[assigned_i]) {
+                            vis_row[assigned_i] = 1;
+                            Q.push(assigned_i);
+                            for (int k = 0; k < n; k++) {
+                                ll newSlack = getRedueced(assigned_i, k);
+                                if (!vis_col[k] && newSlack < slack[k]) {
+                                    slack[k] = newSlack;
+                                    responsiblei[k] = assigned_i;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
-
-    // Try to match each node from left side
-    for (int u = 1; u <= n; ++u) {
-      start = u;
-      initBFS();
-      while (!finish) {
-        findAugPath();
-        if (!finish) subX_addY();
-      }
-      Enlarge();
+    void assign() {
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                if(getRedueced(i, j) == 0 && whichi[j] == -1) {
+                    whichi[j] = i;
+                    whichj[i] = j;
+                    break;
+                }
+            }
+            if(whichj[i] == -1) {
+                while(!find_augment_path()) {
+                    addX_subY();
+                }
+            }
+        }
+    }   
+    // returns a vector pair of n (i, j) which is taken for cost matrix
+    vector<array<int, 2>> max_matching() {
+        vector<array<int, 2>> result;
+        for (int i = 0; i < n; i++) {
+            if (whichj[i] != -1)
+                result.push_back({i, whichj[i]});
+        }
+        return result;
     }
-
-    // Calculate total cost of the final matching
-    long long ans = 0;
-    for (int i = 1; i <= n; ++i) {
-      if (c[i][l[i]] != inf) ans += c[i][l[i]];
-      else l[i] = 0; // No match
-    }
-    return ans;
-  }
 };
