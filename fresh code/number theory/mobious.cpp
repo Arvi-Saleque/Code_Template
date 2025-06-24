@@ -1,79 +1,74 @@
-/*
- *  mu[1]  =  1
- *  mu[n]  =  0   if n has any squared prime factor
- *  mu[n]  = ±1   depending on whether n has an even
- *                 ( +1) or odd (–1) number of primes
- *
- *  Complexity:  O(N log log N)
- * ---------------------------------------------------- */
-void build_mu(vector<int>& mu) {
-    int N = (int)mu.size() - 1;
-    vector<int> primes;
-    vector<int> is_comp(N + 1, 0);
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+typedef long double ld;
+const int N = 1e6 + 9, mod = 1e9 + 7;
 
-    mu[1] = 1;
-    for (int i = 2; i <= N; ++i) {
-        if (!is_comp[i]) {
-            primes.push_back(i);
-            mu[i] = -1;               // prime -> odd count -> −1
+int mob[N + 2];
+void pre() {
+    vector<bool> is_prime(N + 2, true);
+    mob[1] = 1;
+    vector<int> prm;
+    for(int i = 2; i < N; i++) {
+        if(is_prime[i]) {
+            prm.push_back(i);
+            mob[i] = -1;
         }
-        for (int p : primes) {
-            if (1LL * p * i > N) break;
-            int x = p * i;
-            is_comp[x] = 1;
-
-            if (i % p == 0) {         // p divides i  -> square factor
-                mu[x] = 0;
-                break;                // important: stop here
-            } else {
-                mu[x] = -mu[i];       // flip sign because +1 prime factor
+        for(auto p : prm) {
+            if(1LL * i * p >= N) break;
+            int x = i * p;
+            is_prime[x] = 0;
+            if(i % p == 0) {
+                mob[x] = 0;
+                break;
+            }
+            else {
+                mob[x] = mob[i] * -1;
             }
         }
     }
 }
 
-// comprime paris
+void solve() {
+    int n; 
+    cin >> n;
+    vector<int> v(n);
+    for(auto &x : v) cin >> x;
+    int mx = *max_element(v.begin(), v.end());
+    vector<int> freq(mx + 2), cnt(mx + 2);
+    for(auto x : v) cnt[x]++;
+
+    for(int i = 1; i <= mx; i++) {
+        for(int j = i; j <= mx; j += i) {
+            freq[i] += cnt[j];
+        }
+    }
+    
+    auto f = [&](int x) {
+        if(x < 2) return 0LL;
+        return (1LL * x * (x - 1)) >> 1;
+    };
+
+    ll ans = f(n), bad = 0;
+    for(int d = 2; d <= mx; d++) {
+        if(mob[d] == 0) continue;
+        bad += (f(freq[d]) * mob[d]);
+    }
+    cout << ans + bad << "\n"; // bad already has its proper sign so + 
+}
 
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-
-    int n;
-    if (!(cin >> n)) return 0;
-
-    const int MAXA = 1000000;
-    vector<int> freq(MAXA + 1, 0);
-
-    for (int i = 0, x; i < n; ++i) {
-        cin >> x;
-        ++freq[x];
+    pre();
+    ios_base::sync_with_stdio(false);
+    cin.tie(0);
+    int tc = 1;
+    // cin >> tc;
+    while(tc--) {
+        solve();
     }
-
-    /* cntMult[d] = number of array elements divisible by d
-       (classic divisor sieve, O(MAXA log MAXA)) */
-    vector<int> cntMult(MAXA + 1, 0);
-    for (int d = 1; d <= MAXA; ++d) {
-        for (int mult = d; mult <= MAXA; mult += d)
-            cntMult[d] += freq[mult];
-    }
-
-    /* Mobius array */
-    vector<int> mu(MAXA + 1, 0);
-    build_mu(mu);
-
-    /* Inclusion–exclusion:
-       pairs with gcd == 1  =  sum_{d≥1}  μ(d) * C(cntMult[d], 2)  */
-    ll ans = 0;
-    for (int d = 1; d <= MAXA; ++d) {
-        if (mu[d] == 0) continue;
-        ll c = cntMult[d];
-        if (c >= 2)
-            ans += (ll)mu[d] * (c * (c - 1) / 2);
-    }
-
-    cout << ans << '\n';
     return 0;
 }
+
 
 // co prime subsequnce
 
