@@ -13,3 +13,11 @@ int nCr(int n, int r) {
     if (n < r or n < 0) return 0;
     return 1LL * f[n] * invf[r] % mod * invf[n - r] % mod;
 }
+ll nCr(ll n, int r) {
+    if(n < r || n < 0) return 0;
+    ll ans = 1;
+    for(int c = 1; c <= r; c++) {
+        ans = (1LL * ans * n--) % mod;
+    }
+    return (1LL * ans * invf[r]) % mod;       
+}
