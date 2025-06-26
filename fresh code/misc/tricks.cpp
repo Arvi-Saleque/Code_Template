@@ -180,4 +180,18 @@
     - Time: O(sqrt(p)), Space: O(sqrt(p))
     - Precompute a^j (baby steps), match with b * a^(-irootp) (giant steps)
 
+45. Hockey Stick Identity:
+    - sum_{j=r to n} C(j, r) = C(n + 1, r + 1)
+
+46. Weighted Hockey Stick Identity:
+    - sum_{j=r to n} j * C(j, r) = r * C(n + 1, r + 1)
+
+47. Binomial Identity (splitting j * C(j, k - 1)):
+    - j * C(j, k - 1) = (k - 1) * C(j, k - 1) + k * C(j, k)
+    - Useful to break weighted binomial sums into simpler parts
+
+48. Ratio Between Binomials:
+    - C(n, k + 1) = (n - k) / (k + 1) * C(n, k)
+    - Handy for simplifying recursive or dynamic binomial expressions
+
 
