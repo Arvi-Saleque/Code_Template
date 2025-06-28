@@ -124,38 +124,6 @@ int is_point_in_convex(vector<PT> &p, const PT& x) { // O(log n)
     return -1;
 }
 
-// keep only the corners that form a strictly-convex polygon
-vector<PT> make_strict_convex(const vector<PT>& P) {
-    int n = (int)P.size();
-    vector<PT> R;
-    for (int i = 0; i < n; ++i) {
-        PT prv = P[(i + n - 1) % n], cur = P[i], nxt = P[(i + 1) % n];
-        if (orientation(prv, cur, nxt) != 0) R.push_back(cur);
-    }
-    return R;
-}
-
-// return true if a polygon strictly insider other
-bool polygon_polygon_intersect(vector<PT> v1, vector<PT> v2) {
-    v1 = make_strict_convex(v1);
-    reverse(v1.begin(), v1.end());
-    v2 = make_strict_convex(v2);
-    reverse(v2.begin(), v2.end());
-    if (v1.size() < 3 || v2.size() < 3) {
-        return false;
-    }
-    bool ok = true;
-    for (const auto &pt : v2)
-        if (is_point_in_convex(v1, pt) != -1) { ok = false; break; }
-
-    if (!ok) {                             
-        ok = true;
-        for (const auto &pt : v1)
-            if (is_point_in_convex(v2, pt) != -1) { ok = false; break; }
-    }
-    return ok;
-}
-
 // Count boundary lattice points using GCD on each edge
 ll boundary_lattice_points(const vector<PT>& p) {
     ll b = 0;
@@ -255,6 +223,48 @@ vector<PT> ConvexHull(vector<PT>&p, int n) {
     hull.resize(sz - 1);
     return hull;
 }   
+
+
+// keep only the corners that form a strictly-convex polygon
+vector<PT> make_strict_convex(const vector<PT>& P) {
+    int n = (int)P.size();
+    vector<PT> R;
+    for (int i = 0; i < n; ++i) {
+        PT prv = P[(i + n - 1) % n], cur = P[i], nxt = P[(i + 1) % n];
+        if (orientation(prv, cur, nxt) != 0) R.push_back(cur);
+    }
+    return R;
+}
+
+// return true if a polygon strictly insider other
+bool polygon_polygon_intersect(vector<PT> v1, vector<PT> v2) {
+    auto H1 = ConvexHull(v1, v1.size());
+    auto H2 = ConvexHull(v2, v2.size());
+    vector<PT> all = v1;
+    for(auto it : v2) {
+        all.push_back(it);
+    }
+    auto H = ConvexHull(all, all.size());
+    bool ok = (H == H1 || H == H2);
+    return ok;
+    /*v1 = make_strict_convex(v1);
+    reverse(v1.begin(), v1.end());
+    v2 = make_strict_convex(v2);
+    reverse(v2.begin(), v2.end());
+    if (v1.size() < 3 || v2.size() < 3) {
+        return false;
+    }
+    bool ok = true;
+    for (const auto &pt : v2)
+        if (is_point_in_convex(v1, pt) != -1) { ok = false; break; }
+
+    if (!ok) {                             
+        ok = true;
+        for (const auto &pt : v1)
+            if (is_point_in_convex(v2, pt) != -1) { ok = false; break; }
+    }
+    return ok;*/
+}
 
 // Projection of point c onto line ab
 PT project_from_point_to_line(PT a, PT b, PT c) {
