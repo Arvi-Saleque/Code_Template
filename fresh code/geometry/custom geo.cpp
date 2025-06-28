@@ -105,6 +105,57 @@ int is_point_in_polygon(vector<PT> &p, const PT& z) { // O(n)
     return k == 1e9 ? 0 : k == 0 ? 1 : -1;
 }
 
+// -1 if strictly inside, 0 if on the polygon, 1 if strictly outside
+// it must be strictly convex, otherwise make it strictly convex first
+int is_point_in_convex(vector<PT> &p, const PT& x) { // O(log n)
+    int n = p.size(); assert(n >= 3);
+    int a = orientation(p[0], p[1], x), b = orientation(p[0], p[n - 1], x);
+    if (a < 0 || b > 0) return 1;
+    int l = 1, r = n - 1;
+    while (l + 1 < r) {
+        int mid = l + r >> 1;
+        if (orientation(p[0], p[mid], x) >= 0) l = mid;
+        else r = mid;
+    }
+    int k = orientation(p[l], p[r], x);
+    if (k <= 0) return -k;
+    if (l == 1 && a == 0) return 0;
+    if (r == n - 1 && b == 0) return 0;
+    return -1;
+}
+
+// keep only the corners that form a strictly-convex polygon
+vector<PT> make_strict_convex(const vector<PT>& P) {
+    int n = (int)P.size();
+    vector<PT> R;
+    for (int i = 0; i < n; ++i) {
+        PT prv = P[(i + n - 1) % n], cur = P[i], nxt = P[(i + 1) % n];
+        if (orientation(prv, cur, nxt) != 0) R.push_back(cur);
+    }
+    return R;
+}
+
+// return true if a polygon strictly insider other
+bool polygon_polygon_intersect(vector<PT> v1, vector<PT> v2) {
+    v1 = make_strict_convex(v1);
+    reverse(v1.begin(), v1.end());
+    v2 = make_strict_convex(v2);
+    reverse(v2.begin(), v2.end());
+    if (v1.size() < 3 || v2.size() < 3) {
+        return false;
+    }
+    bool ok = true;
+    for (const auto &pt : v2)
+        if (is_point_in_convex(v1, pt) != -1) { ok = false; break; }
+
+    if (!ok) {                             
+        ok = true;
+        for (const auto &pt : v1)
+            if (is_point_in_convex(v2, pt) != -1) { ok = false; break; }
+    }
+    return ok;
+}
+
 // Count boundary lattice points using GCD on each edge
 ll boundary_lattice_points(const vector<PT>& p) {
     ll b = 0;
