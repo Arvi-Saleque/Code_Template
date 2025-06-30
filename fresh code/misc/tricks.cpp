@@ -194,4 +194,33 @@
     - C(n, k + 1) = (n - k) / (k + 1) * C(n, k)
     - Handy for simplifying recursive or dynamic binomial expressions
 
+49. DSU on 2D grid (reverse build, e.g., paint black → white):
+    - pain all query start from reverse removing
+    - Each time a cell is made white:
+        * If no white neighbor → comp++
+        * Else, check 4 neighbors and connect different components → comp--
+        * Finally, connect current cell to one neighbor
+
+    - Pseudocode:
+      auto calc = [&](int x, int y) {
+          vector<pii> cnt;
+          for (int d = 0; d < 4; d++) {
+              int nx = x + dx[d], ny = y + dy[d];
+              if (valid(nx, ny) && vis[nx][ny] == 0)
+                  cnt.push_back({nx, ny});
+          }
+          if (cnt.empty()) comp++;
+          else {
+              auto root = cnt[0];
+              for (int i = 1; i < cnt.size(); i++) {
+                  if (dsu.find(root) != dsu.find(cnt[i])) {
+                      comp--;
+                      dsu.join(root, cnt[i]);
+                  }
+              }
+              dsu.join({x, y}, root);
+          }
+      };
+
+
 
