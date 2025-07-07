@@ -222,5 +222,10 @@
           }
       };
 
+50. Choose values where OR of all ai <= k:
+    - tmp = k, turn off ith bit in k of tmp
+    - Turn on all lower bits (0 to i-1) 
+    - Then check for each mask if((tmp | ai) == tmp) add ans
+
 
 
