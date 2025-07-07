@@ -137,12 +137,34 @@ void solve() {
     cout << ans << '\n';
 }
 
-/* --------------------------------------------------------------------- */
-int main(){
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    int T = 1;     // change if multiple cases
-    //cin >> T;
-    while(T--) solve();
-    return 0;
-}
+// positive gains using take - kepp >= 0
+vector<vector<ll>> dp(n + 1);
+function<void(int, int)> dfs = [&](int u, int p) -> void {
+    dp[u].assign(d[u] + 1, -1);
+    dp[u][0] = 0;
+    for(auto [w, v] : g[u]) if(v != p) {
+        dfs(v, u);
+    }
+    vector<ll> profit;
+    for (auto [w,v] : g[u]) if (v != p) {
+        ll keep = dp[v][ d[v] ];          
+        dp[u][0] += keep;                 
+
+        if (d[v] >= 1) {
+            ll take = w + dp[v][ d[v]-1 ];   
+            ll gain = take - keep;           
+            if (gain > 0) profit.push_back(gain);
+        }
+    }
+    sort(profit.rbegin(), profit.rend());      
+
+    for (int c = 1; c <= d[u]; ++c) {
+        if (c <= (int)profit.size())
+            dp[u][c] = dp[u][c-1] + profit[c-1];
+        else
+            dp[u][c] = dp[u][c-1];
+    }
+
+};
+dfs(1, 0);
+cout << dp[1][d[1]] << "\n";
