@@ -1,24 +1,30 @@
+// must filled what leafs hold
+// make sure node() what return when out of bounds
+
 class SegTlazy {
 public:
     #define lc (nd << 1)
     #define rc (lc | 1)
     #define MAX_BIT 25
     struct node {
-        ll suma, sumb, sumab, lazya, lazyb;
+        ll lazy, mn, mncnt;
+        bool haslazy;
         node() {
-            suma = sumb = lazya = lazyb = sumab = 0;
+            mncnt = lazy = 0;
+            haslazy = 0;
+            mn = 1e18;
         };
-    };  
+        node(ll _m, ll _mc) : mn(_m), mncnt(_mc), lazy(0), haslazy(0) {}
+    };   
     struct node {
         int bitCount[MAX_BIT];
     };
-    vector<ll> a1, a2;
+    vector<ll> a;
     vector<node> t;
     int n; 
     SegTlazy() {
         n = 0;
-        a1.clear();
-        a2.clear();
+        a.clear();
         t.clear();
     }
     SegTlazy(int n) {
@@ -69,8 +75,8 @@ public:
             l.suf_sum);
         nd.tot_sum = l.tot_sum + r.tot_sum;
     }
-    void push(int nd, int b, int e) {
-        if(lazy[nd] == 0) return;
+    void apply(int nd, int b, int e, int lazy) {
+        t[nd].mn += t[nd].lazy;
         int nodes = e-b+1;
         for(int k=0;k<MAX_BIT;k++) {
             if(lazy[nd] & (1 << k)) {
@@ -94,12 +100,16 @@ public:
         lazy[l] = lazy[nd];
         // arithamatic progression
         t[nd].mn += lazy[nd]; t[nd].mx += lazy[nd];
-        if(b != e) { 
-            lazy[lc] += lazy[nd]; t[lc].hasLazy = 1;
-            lazy[rc] += lazy[nd]; t[rc].hasLazy = 1;
+    }
+    void push(int nd, int b, int e) {
+        if(!t[nd].haslazy) return;
+        apply(nd, b, e, t[nd].lazy);
+        if(b != e) {
+            t[lc].lazy += t[nd].lazy; t[lc].haslazy = 1;
+            t[rc].lazy += t[nd].lazy; t[rc].haslazy = 1;
         }
-        lazy[nd] = 0;
-        t[nd].hasLazy = false;
+        t[nd].lazy = 0;
+        t[nd].haslazy = 0;
     }
     void upd(int nd, int b, int e, int i, int j, ll v) {
         push(nd, b, e);
@@ -114,6 +124,16 @@ public:
         int mid = b + e >> 1;
         upd(lc, b, mid, i, j, v);
         upd(rc, mid + 1, e, i, j, v);
+        merge(t[nd], t[lc], t[rc]);
+    }
+    void build(int nd, int b, int e) {
+        if(b == e) {
+            t[nd] = node(0, 1);
+            return;
+        }
+        int mid = b + e >> 1;
+        build(lc, b, mid);
+        build(rc, mid + 1, e);
         merge(t[nd], t[lc], t[rc]);
     }
     node query(int nd, int b, int e, int i, int j) {
