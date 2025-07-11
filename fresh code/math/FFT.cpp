@@ -1,3 +1,4 @@
+//Multiply returns ans[k]=∑ ai*bj % MOD [such that i+j==k]
 const double PI = acos(-1);
 struct cd {
     double x, y;
