@@ -1,46 +1,73 @@
 class SegTlazy {
 public:
     struct node {
-        ll mn, mx, lazy;
+        ll mn, mncnt, lazy;
+        bool haslazy;
         node *l, *r;      
-        node() : mn(0), mx(0), lazy(0), l(nullptr), r(nullptr) {}
-        node(ll mn, ll mx) : mn(mn), mx(mx), lazy(0), l(nullptr), r(nullptr) {}
+        node() : mn(inf), mncnt(0), lazy(0), haslazy(0), l(nullptr), r(nullptr) {}
+        node(ll mn, ll mncnt) : mn(mn), mncnt(mncnt), lazy(0), haslazy(0), l(nullptr), r(nullptr) {}
     };
  
     node *root; 
-    ll n;      
- 
-    explicit SegTlazy(ll _n) : n(_n) { root = new node(); }
+    ll n, m; // max and min range      
+     // default 1 to max
+    explicit SegTlazy(ll _n, ll _m = 1) : n(_n), m(_m) { root = new node(); }
     inline void merge(node *nd) {
-        nd->mn = min(nd->l ? nd->l->mn : 0LL,
-                          nd->r ? nd->r->mn : 0LL);
-        nd->mx = max(nd->l ? nd->l->mx : 0LL,
-                          nd->r ? nd->r->mx : 0LL);
+        nd->mncnt = 0;
+        if(nd->l && nd->r) {
+            nd->mn = min(nd->l->mn, nd->r->mn);
+            if(nd->mn == nd->l->mn) nd->mncnt += nd->l->mncnt;
+            if(nd->mn == nd->r->mn) nd->mncnt += nd->r->mncnt;
+        }
+        else if(nd -> l) {
+            nd->mn = nd->l->mn;
+            if(nd->mn == nd->l->mn) nd->mncnt += nd->l->mncnt;
+        }
+        else if(nd -> r) {
+            nd->mn = nd->r->mn;
+            if(nd->mn == nd->r->mn) nd->mncnt += nd->r->mncnt;
+        }
+    }
+    void apply(node *nd, ll b, ll e, ll lazy) {
+        nd->mn += lazy;
     }
     inline void push(node *nd, ll b, ll e) {
-        if (!nd || nd->lazy == 0) return;
+        if (!nd->haslazy) return;
+        apply(nd, b, e, nd->lazy);
         if (b != e) {    
             if (!nd->l) nd->l = new node();
             if (!nd->r) nd->r = new node();
             nd->l->lazy += nd->lazy;
             nd->r->lazy += nd->lazy;
-            nd->l->mn   += nd->lazy;
-            nd->l->mx   += nd->lazy;
-            nd->r->mn   += nd->lazy;
-            nd->r->mx   += nd->lazy;
+            nd->l->haslazy = 1;
+            nd->r->haslazy = 1;
         }
         nd->lazy = 0;
+        nd->haslazy = 0;
     }
-    
-    void upd(node *nd, ll b, ll e, ll i, ll j, ll v) {
-        if (j < b || e < i) return;        // no overlap
-        if (i <= b && e <= j) {            // fully inside
-            nd->lazy += v;
-            nd->mn   += v;
-            nd->mx   += v;
+    void build(node *nd, ll b, ll e) {
+        if(b == e) {
+            nd->mn = 0;
+            nd->mncnt = 1;
             return;
         }
+        ll mid = (b + e) >> 1;
+        if (!nd->l) nd->l = new node();
+        if (!nd->r) nd->r = new node();
+        build(nd->l, b, mid);
+        build(nd->r, mid + 1, e);
+        merge(nd);
+    }
+    void build() { build(root, m, n); }
+    void upd(node *nd, ll b, ll e, ll i, ll j, ll v) {
         push(nd, b, e);
+        if (j < b || e < i) return;       
+        if (i <= b && e <= j) {          
+            nd->lazy += v;
+            nd->haslazy = 1;
+            push(nd, b, e);
+            return;
+        }
         ll mid = (b + e) >> 1;
         if (!nd->l) nd->l = new node();
         if (!nd->r) nd->r = new node();
@@ -48,10 +75,9 @@ public:
         upd(nd->r, mid + 1, e, i, j, v);
         merge(nd);
     }
-    
-    void upd(ll l, ll r, ll v) { upd(root, 1, n, l, r, v); }
+    void upd(ll l, ll r, ll v) { upd(root, m, n, l, r, v); }
     node query(node *nd, ll b, ll e, ll i, ll j) {
-        if (j < b || e < i) return node(inf, -inf);      // neutral (mn big, mx small)
+        if (j < b || e < i) return node();     
         if(!nd) return node();
         if (i <= b && e <= j) return *nd;
         push(nd, b, e);
@@ -60,8 +86,10 @@ public:
         node right = query(nd->r, mid + 1, e, i, j);
         node res;
         res.mn = min(left.mn, right.mn);
-        res.mx = max(left.mx, right.mx);
+        if(res.mn == left.mn) res.mncnt += left.mncnt;
+        if(res.mn == right.mn) res.mncnt += right.mncnt;
         return res;
     }
-    node query(ll l, ll r) { return query(root, 1, n, l, r); }
+    node query(ll l, ll r) { return query(root, m, n, l, r); }
 };
+ 
