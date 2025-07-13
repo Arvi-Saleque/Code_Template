@@ -227,5 +227,8 @@
     - Turn on all lower bits (0 to i-1) 
     - Then check for each mask if((tmp | ai) == tmp) add ans
 
+51. Minimum swaps to sort a permutation:
+    - Build graph: edges from i to p[i]
+    - Answer = n - number_of_components
 
 
