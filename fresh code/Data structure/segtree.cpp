@@ -169,4 +169,51 @@ tree.upd(1, 1, n, l, l, a);
 if(l + 1 <= r) tree.upd(1, 1, n, l + 1, r, d);
 if(r + 1 <= n) tree.upd(1, 1, n, r + 1, r + 1, -(a + 1LL * (r - l) * d));
 
+vector<pair<int, int>> vec;
+node(vector<pair<int, int>> v) {
+    vec.swap(v);
+    int mn = 1e9;
+    for(auto &p: vec){
+        mn = min(mn, p.second);
+        p.second = mn;
+    }
+}
+void merge(node &ND, node &L, node &R) {
+    if(L.vec.empty()) {ND = R; return;}
+    if(R.vec.empty()) {ND = L; return;}
+    ND.vec.clear();
+    int l = 0, r = 0, mn = 1e9;
+    while(l<L.vec.size() || r<R.vec.size()){
+        pair<int,int> cur;
+        if(r==R.vec.size() || (l<L.vec.size() && L.vec[l].first<=R.vec[r].first))
+            cur = L.vec[l++];
+        else cur = R.vec[r++];
+        mn = min(mn, cur.second);
+        ND.vec.push_back({cur.first, mn});                           
+    }
+}
+void build(int nd, int b, int e) {
+    if(b == e) {
+        t[nd].vec.push_back({b + a[b] - 1, a[b]});
+        return;
+    }
+    int mid = (b + e) >> 1;
+    build(lc, b, mid);
+    build(rc, mid + 1, e);
+    merge(t[nd], t[lc], t[rc]);
+}
+int query(int nd, int b, int e, int i, int j, int k){         
+    if(j < b || e < i) return 1e9;
+    if(i <= b && e <= j) {
+        auto &v = t[nd].vec;
+        if(v.empty() || v.front().first > k) return 1e9;
+        int cnt = upper_bound(v.begin(), v.end(), k, [](int val, pair<int, int> &p){
+            return (val < p.first);
+        }) - v.begin();
+        return v[cnt - 1].second;
+    }              
+    int mid = b + e >> 1;
+    return min(query(lc, b, mid, i, j, k), query(rc, mid + 1, e, i, j, k));
+}
+
 
