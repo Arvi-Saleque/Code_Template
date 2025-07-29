@@ -168,3 +168,34 @@ function<void(int, int)> dfs = [&](int u, int p) -> void {
 };
 dfs(1, 0);
 cout << dp[1][d[1]] << "\n";
+
+/*
+for knapsack dp try to loop on all possibilities
+*/
+function<void(int, int)> dfs = [&](int u, int p) -> void {
+    vector<vector<ll>> cur(3, vector<ll>(x + 1, 0));
+    cur[0][0] = k - 1;
+    cur[1][1] = 1;
+    cur[2][0] = m - k;
+    for(auto v : g[u]) if(v != p) {
+        dfs(v, u);
+        vector<vector<ll>> new_cur(3, vector<ll>(x + 1, 0));
+        for(int su = 0; su <= 2; su++) {
+            for(int sv = 0; sv <= 2; sv++) {
+                for(int c1 = 0; c1 <= x; c1++) {
+                    for(int c2 = 0; c1 + c2 <= x; c2++) {
+                        if(su == 1 && sv != 0) continue;
+                        if(su != 0 && sv == 1) continue;
+                        new_cur[su][c1 + c2] = (new_cur[su][c1 + c2] + (cur[su][c1] * dp[v][sv][c2]) % mod) % mod;
+                    }
+                }
+            }
+        }
+        swap(cur, new_cur);
+    }
+    for(int s = 0; s <= 2; s++) {
+        for(int c = 0; c <= x; c++) {
+            dp[u][s][c] = cur[s][c];
+        }
+    }
+};
