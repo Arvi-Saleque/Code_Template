@@ -231,4 +231,8 @@
     - Build graph: edges from i to p[i]
     - Answer = n - number_of_components
 
+52. Partial sum of binomial coefficients:
+    - S(l, k) = ∑_{i = k}^{l} C(l, i)   (l >= k >= 0)
+    - S(l, k) = 2 * S(l - 1, k) + C(l - 1, k - 1) (mod M)
+
 
