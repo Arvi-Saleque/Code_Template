@@ -207,7 +207,7 @@ pair<ll, pair<PT, PT>> minimum_euclidean_distance(vector<PT>& pts) {
     return closest_pair_recursive(pts, tmp, 0, n);
 }
 
-
+// returns the boundary points of the convex hull.
 vector<PT> ConvexHull(vector<PT>&p, int n) {
     int sz = 0;
     vector<PT> hull(n + n);
@@ -400,4 +400,5 @@ int is_point_in_triangle(PT a, PT b, PT c, PT p) {
     if (c1 + c2 + c3 != 3) return 0;
     return -1;
 }
+
 
