@@ -1,10 +1,3 @@
-// https://vjudge.net/problem/Gym-104857C
-#include <bits/stdc++.h>
-using namespace std;
-typedef long long ll;
-typedef long double ld;
-const int mod = 998244353;
-
 struct palindromic_tree {
     struct node {
         int len, link;
@@ -72,36 +65,3 @@ struct palindromic_tree {
         }
     }
 };
-
-void solve() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    int n0; 
-    cin >> n0;
-    string s; 
-    cin >> s;
-
-    string ds = s + s;                 // build on s+s once
-    palindromic_tree tree(ds, n0);
-    int n = (int)ds.size();
-    for (int i = 0; i < n; ++i) tree.add(i);
-    tree.pushOcc();
-
-    ll ans = 0;
-    for (int i = 2; i < (int)tree.t.size(); ++i) {
-        int len = tree.t[i].len;
-        if (len > n0) continue;        // cyclic substrings must have len ≤ n0
-        long long f = (long long)tree.t[i].occ - (long long)tree.t[i].occ1; // f_circular
-        f %= mod; if (f < 0) f += mod;
-        long long add = (f * f) % mod;
-        add = (add * len) % mod;
-        ans += add;
-        if (ans >= mod) ans -= mod;
-    }
-    cout << ans % mod << "\n";
-}
-
-int main() {
-    solve();
-    return 0;
-}
